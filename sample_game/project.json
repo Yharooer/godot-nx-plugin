@@ -1,0 +1,23 @@
+{
+  "name": "sample-game",
+  "root": "sample_game",
+  "sourceRoot": "sample_game",
+  "projectType": "application",
+  "implicitDependencies": ["character-gdscript"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        {
+          "target": "build",
+          "projects": "dependencies"
+        }
+      ],
+      "options": {
+        "commands": ["node godot-build-tools/link-deps.js"],
+        "parallel": false
+      },
+      "outputs": ["{workspaceRoot}/sample_game/_addons"]
+    }
+  }
+}

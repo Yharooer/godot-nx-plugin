@@ -1,0 +1,19 @@
+{
+  "name": "character-common",
+  "root": "character_common",
+  "sourceRoot": "character_common",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "node godot-build-tools/build-subproject.js",
+          "node godot-build-tools/link-deps.js"
+        ],
+        "parallel": false
+      },
+      "outputs": ["{projectRoot}/build", "{projectRoot}/_addons"]
+    }
+  }
+}

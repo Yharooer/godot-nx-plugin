@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=3 uid="uid://wta006ueskh4"]
+
+[ext_resource type="Texture2D" uid="uid://bj2up2ib6er15" path="res://res/cpp.svg" id="1_uhqqe"]
+[ext_resource type="Texture2D" uid="uid://oa44v2avkl5c" path="res://res/rust.svg" id="2_ia1lp"]
+
+[node name="Node2D" type="Node2D"]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="godot_cpp" type="GDExample" parent="."]
+position = Vector2(11.0637, 9.20157)
+
+[node name="Sprite2D" type="Sprite2D" parent="godot_cpp"]
+position = Vector2(50, 50)
+scale = Vector2(0.18, 0.18)
+texture = ExtResource("1_uhqqe")
+
+[node name="godot_rust" type="CharacterRust" parent="."]
+position = Vector2(-150, -150)
+
+[node name="Sprite2D" type="Sprite2D" parent="godot_rust"]
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("2_ia1lp")

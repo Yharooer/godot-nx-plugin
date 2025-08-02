@@ -1,0 +1,23 @@
+{
+  "name": "character-rust-gdext",
+  "root": "character_rust_gdext",
+  "sourceRoot": "character_rust_gdext/src",
+  "projectType": "library",
+  "implicitDependencies": ["character-common"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        { "target": "build", "projects": "dependencies" }
+      ],
+      "options": {
+        "commands": [
+          "node godot-build-tools/build-subproject.js",
+          "node godot-build-tools/link-deps.js"
+        ],
+        "parallel": false
+      },
+      "outputs": ["{projectRoot}/build", "{projectRoot}/_addons"]
+    }
+  }
+}
