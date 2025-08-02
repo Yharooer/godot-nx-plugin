@@ -1,19 +1,29 @@
 {
   "name": "godot-build-tools",
-  "$schema": "./node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": ".",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "godot-build-tools/lib",
   "projectType": "library",
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
-      "outputs": ["{options.outputPath}"],
+      "outputs": ["{projectRoot}/build"],
       "options": {
-        "outputPath": "dist",
-        "main": "index.ts",
-        "tsConfig": "tsconfig.lib.json",
-        "assets": ["*.md"]
+        "outputPath": "godot-build-tools/build",
+        "main": "godot-build-tools/lib/index.ts",
+        "tsConfig": "godot-build-tools/tsconfig.json",
+        "assets": [
+          "godot-build-tools/*.md",
+          "godot-build-tools/executors.json",
+          "godot-build-tools/package.json"
+        ]
+      }
+    },
+    "clean": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "rm -rf godot-build-tools/build"
       }
     }
   },
-  "tags": []
+  "tags": ["build-tools"]
 }

@@ -9,5 +9,11 @@
     "version": "21.3.7"
   },
   "useDaemonProcess": false,
-  "$schema": "./godot-build-tools/node_modules/nx/schemas/nx-schema.json"
+  "targetDefaults": {
+    "build": {
+      "cache": true,
+      "dependsOn": ["^build"]
+    }
+  },
+  "$schema": "./node_modules/nx/schemas/nx-schema.json"
 }

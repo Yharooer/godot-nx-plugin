@@ -3,9 +3,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { createProjectGraphAsync, ProjectGraph, ProjectGraphProjectNode } from '@nx/devkit';
 
-(async function main(): Promise<void> {
-  const workspaceRoot = path.resolve(__dirname, '..');
-  const projectName = process.env.NX_TASK_TARGET_PROJECT;
+export async function buildSubproject(): Promise<void> {
+  const workspaceRoot = path.resolve(__dirname, '../..');
+  const projectName = process.env['NX_TASK_TARGET_PROJECT'];
   if (!projectName) {
     console.error('❌ NX_TASK_TARGET_PROJECT is not set.');
     process.exit(1);
@@ -33,7 +33,13 @@ import { createProjectGraphAsync, ProjectGraph, ProjectGraphProjectNode } from '
     const dest = path.join(buildDir, entry);
     fs.symlinkSync(src, dest, fs.statSync(src).isDirectory() ? 'dir' : 'file');
   }
-})();
+}
 
-// ensure process exits (avoids hanging)
-process.on('beforeExit', () => process.exit(0));
+// If this file is run directly, execute the main function
+if (require.main === module) {
+  (async function main(): Promise<void> {
+    await buildSubproject();
+    // ensure process exits (avoids hanging)
+    process.on('beforeExit', () => process.exit(0));
+  })();
+}

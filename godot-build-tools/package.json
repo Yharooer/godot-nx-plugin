@@ -1,0 +1,28 @@
+{
+  "name": "@yharooer/godot-build-tools",
+  "version": "0.1.0",
+  "description": "NX build tools for Godot projects",
+  "main": "build/lib/index.js",
+  "types": "build/lib/index.d.ts",
+  "files": [
+    "build",
+    "executors.json"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf build"
+  },
+  "dependencies": {
+    "@nx/devkit": "^21.3.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.8.3"
+  },
+  "peerDependencies": {
+    "nx": ">=21.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

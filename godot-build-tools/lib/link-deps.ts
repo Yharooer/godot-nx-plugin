@@ -3,9 +3,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { createProjectGraphAsync, ProjectGraph, ProjectGraphProjectNode } from '@nx/devkit';
 
-(async function main(): Promise<void> {
-  const workspaceRoot = path.resolve(__dirname, '..');
-  const projectName = process.env.NX_TASK_TARGET_PROJECT;
+export async function linkDeps(): Promise<void> {
+  const workspaceRoot = path.resolve(__dirname, '../..');
+  const projectName = process.env['NX_TASK_TARGET_PROJECT'];
   if (!projectName) {
     console.error('❌ NX_TASK_TARGET_PROJECT is not set.');
     process.exit(1);
@@ -44,7 +44,7 @@ import { createProjectGraphAsync, ProjectGraph, ProjectGraphProjectNode } from '
   for (const dep of deps) {
     const node = graph.nodes[dep];
     if (!node) continue;
-    const outputs = node.data.targets?.build?.outputs || [];
+    const outputs = node.data.targets?.['build']?.outputs || [];
     for (const pattern of outputs) {
       if (pattern.includes('_addons')) continue;
       const raw = pattern
@@ -57,7 +57,13 @@ import { createProjectGraphAsync, ProjectGraph, ProjectGraphProjectNode } from '
       console.log(`🔗 [${projectName}] ${dep} -> ${path.relative(workspaceRoot, linkDest)}`);
     }
   }
-})();
+}
 
-// ensure process exits (avoids hanging)
-process.on('beforeExit', () => process.exit(0));
+// If this file is run directly, execute the main function
+if (require.main === module) {
+  (async function main(): Promise<void> {
+    await linkDeps();
+    // ensure process exits (avoids hanging)
+    process.on('beforeExit', () => process.exit(0));
+  })();
+}
