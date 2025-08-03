@@ -1,6 +1,7 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
+    "rootDir": "lib",
     "outDir": "build",
     "sourceMap": true,
     "declaration": true,
