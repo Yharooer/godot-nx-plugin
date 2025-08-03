@@ -24,7 +24,7 @@
   - Validate: Test that NX can discover and list the new executors
   - _Requirements: 1.1, 1.2, 6.1, 6.2, 7.1_
 
-- [ ] 4. Implement dependency linking functionality
+- [x] 4. Implement dependency linking functionality
   - Create DependencyLinkingStep class for symlinking dependencies to _addons
   - Implement transitive dependency resolution
   - Add proper cleanup of existing _addons directory before linking

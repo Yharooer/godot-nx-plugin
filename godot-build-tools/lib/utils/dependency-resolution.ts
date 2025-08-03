@@ -8,7 +8,7 @@ import { ProjectDependency, ProjectTypeEnum } from '../core/interfaces';
 import { DependencyError, ConfigurationError } from '../core/errors';
 
 /**
- * Resolve all transitive dependencies for a project
+ * Resolve all transitive dependencies for a project with circular dependency detection
  * @param projectName Name of the project
  * @param graph NX project graph
  * @param workspaceRoot Path to workspace root
@@ -19,23 +19,31 @@ export function resolveTransitiveDependencies(
   graph: ProjectGraph,
   workspaceRoot: string
 ): readonly ProjectDependency[] {
-  const visited = new Set<string>();
   const dependencies: ProjectDependency[] = [];
-  const queue: string[] = [projectName];
+  const visited = new Set<string>();
+  const visiting = new Set<string>(); // Track nodes currently being visited for cycle detection
 
-  // Track the dependency chain for circular dependency detection
-  const dependencyChain: string[] = [];
+  /**
+   * Depth-first search to resolve dependencies with cycle detection
+   */
+  function visitProject(currentProject: string, dependencyPath: string[]): void {
+    // Check if we're already visiting this project (cycle detection)
+    if (visiting.has(currentProject)) {
+      const cycleStart = dependencyPath.indexOf(currentProject);
+      const cycle = [...dependencyPath.slice(cycleStart), currentProject];
+      throw new DependencyError(
+        `Circular dependency detected: ${cycle.join(' -> ')}`,
+        projectName
+      );
+    }
 
-  while (queue.length > 0) {
-    const currentProject = queue.shift();
-    if (!currentProject) continue;
+    // Skip if already fully processed
+    if (visited.has(currentProject)) {
+      return;
+    }
 
-    // Skip if already processed
-    if (visited.has(currentProject)) continue;
-    visited.add(currentProject);
-
-    // Add to dependency chain for circular detection
-    dependencyChain.push(currentProject);
+    // Mark as currently being visited
+    visiting.add(currentProject);
 
     // Get direct dependencies
     const projectDependencies = graph.dependencies[currentProject] || [];
@@ -43,15 +51,6 @@ export function resolveTransitiveDependencies(
     for (const { target } of projectDependencies) {
       // Skip self-references
       if (target === projectName) continue;
-
-      // Check for circular dependencies
-      if (dependencyChain.includes(target)) {
-        const cycle = [...dependencyChain, target];
-        throw new DependencyError(
-          `Circular dependency detected: ${cycle.join(' -> ')}`,
-          projectName
-        );
-      }
 
       // Get the target project node
       const targetNode = graph.nodes[target];
@@ -62,6 +61,9 @@ export function resolveTransitiveDependencies(
         );
       }
 
+      // Recursively visit the dependency
+      visitProject(target, [...dependencyPath, currentProject]);
+
       // Add to dependencies if not already included and not the original project
       if (!dependencies.some(dep => dep.name === target)) {
         const buildDir = path.join(workspaceRoot, targetNode.data.root, 'build');
@@ -71,16 +73,15 @@ export function resolveTransitiveDependencies(
           buildDir
         });
       }
-
-      // Add to queue for transitive dependency resolution
-      if (!visited.has(target)) {
-        queue.push(target);
-      }
     }
 
-    // Remove from dependency chain when done processing
-    dependencyChain.pop();
+    // Mark as fully processed and remove from visiting set
+    visiting.delete(currentProject);
+    visited.add(currentProject);
   }
+
+  // Start the dependency resolution from the root project
+  visitProject(projectName, []);
 
   return dependencies;
 }
