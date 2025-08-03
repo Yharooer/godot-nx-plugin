@@ -37,7 +37,7 @@ export interface BuildContext {
   /** Path to the build directory (always {projectRoot}/build) */
   readonly buildDir: string;
   /** List of project dependencies */
-  readonly dependencies: ProjectDependency[];
+  readonly dependencies: readonly ProjectDependency[];
   /** Executor options passed from project.json */
   readonly options: Record<string, any>;
 }

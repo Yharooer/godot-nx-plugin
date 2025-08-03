@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "version": 2,
+  "title": "Godot Library Build Executor",
+  "description": "Build a Godot library project with dependency linking",
+  "type": "object",
+  "properties": {
+    "skipDependencyValidation": {
+      "type": "boolean",
+      "description": "Skip dependency validation (useful for development)",
+      "default": false
+    },
+    "verbose": {
+      "type": "boolean",
+      "description": "Enable verbose logging",
+      "default": false
+    },
+    "cleanBuild": {
+      "type": "boolean",
+      "description": "Clean the build and _addons directories before building",
+      "default": true
+    }
+  },
+  "additionalProperties": false
+}

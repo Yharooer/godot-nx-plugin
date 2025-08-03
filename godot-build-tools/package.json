@@ -2,8 +2,9 @@
   "name": "@yharooer/godot-build-tools",
   "version": "0.1.0",
   "description": "NX build tools for Godot projects",
-  "main": "build/lib/index.js",
-  "types": "build/lib/index.d.ts",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "executors": "./executors.json",
   "files": [
     "build",
     "executors.json"

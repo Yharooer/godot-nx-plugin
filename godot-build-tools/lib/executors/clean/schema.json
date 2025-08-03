@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "version": 2,
+  "title": "Clean Executor",
+  "description": "Clean build artifacts and _addons directory",
+  "type": "object",
+  "properties": {
+    "skipDependencyValidation": {
+      "type": "boolean",
+      "description": "Skip dependency validation (useful for development)",
+      "default": false
+    },
+    "verbose": {
+      "type": "boolean",
+      "description": "Enable verbose logging",
+      "default": false
+    },
+    "cleanBuild": {
+      "type": "boolean",
+      "description": "Clean the build directory",
+      "default": true
+    },
+    "cleanAddons": {
+      "type": "boolean",
+      "description": "Clean the _addons directory",
+      "default": true
+    }
+  },
+  "additionalProperties": false
+}

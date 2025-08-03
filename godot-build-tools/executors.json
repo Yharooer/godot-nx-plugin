@@ -1,0 +1,24 @@
+{
+  "executors": {
+    "godot-library": {
+      "implementation": "./build/executors/godot-library/executor",
+      "schema": "./lib/executors/godot-library/schema.json",
+      "description": "Build a Godot library project with dependency linking"
+    },
+    "link-deps": {
+      "implementation": "./build/executors/link-deps/executor",
+      "schema": "./lib/executors/link-deps/schema.json",
+      "description": "Link project dependencies to _addons directory"
+    },
+    "clean": {
+      "implementation": "./build/executors/clean/executor",
+      "schema": "./lib/executors/clean/schema.json",
+      "description": "Clean build artifacts and _addons directory"
+    },
+    "gdextension": {
+      "implementation": "./build/executors/gdextension/executor",
+      "schema": "./lib/executors/gdextension/schema.json",
+      "description": "Build a GDExtension project (C++/Rust)"
+    }
+  }
+}

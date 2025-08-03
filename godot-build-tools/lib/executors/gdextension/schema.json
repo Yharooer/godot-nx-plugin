@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "version": 2,
+  "title": "GDExtension Build Executor",
+  "description": "Build a GDExtension project (C++/Rust)",
+  "type": "object",
+  "properties": {
+    "skipDependencyValidation": {
+      "type": "boolean",
+      "description": "Skip dependency validation (useful for development)",
+      "default": false
+    },
+    "verbose": {
+      "type": "boolean",
+      "description": "Enable verbose logging",
+      "default": false
+    },
+    "cleanBuild": {
+      "type": "boolean",
+      "description": "Clean the build directory before building",
+      "default": true
+    },
+    "buildType": {
+      "type": "string",
+      "description": "Build type (debug or release)",
+      "enum": ["debug", "release"],
+      "default": "debug"
+    },
+    "target": {
+      "type": "string",
+      "description": "Target platform (auto-detected if not specified)"
+    }
+  },
+  "additionalProperties": false
+}

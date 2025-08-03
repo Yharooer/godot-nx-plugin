@@ -3,6 +3,7 @@
  */
 
 import * as fs from 'fs';
+import * as path from 'path';
 import { FileSystemError } from '../core/errors';
 
 /**
@@ -126,4 +127,59 @@ export function getDirectoryEntries(dirPath: string, excludePatterns: readonly s
 export function cleanAndCreateDir(dirPath: string, projectName?: string): void {
   safeRemove(dirPath, projectName);
   safeCreateDir(dirPath, projectName);
+}
+
+/**
+ * Ensure a directory exists (create if it doesn't)
+ * @param dirPath Directory path
+ * @param projectName Optional project name for error context
+ */
+export async function ensureDirectoryExists(dirPath: string, projectName?: string): Promise<void> {
+  if (!pathExists(dirPath)) {
+    safeCreateDir(dirPath, projectName);
+  }
+}
+
+/**
+ * Remove a directory or file
+ * @param targetPath Path to remove
+ * @param projectName Optional project name for error context
+ */
+export async function removeDirectory(targetPath: string, projectName?: string): Promise<void> {
+  safeRemove(targetPath, projectName);
+}
+
+/**
+ * Create a symlink
+ * @param source Source path
+ * @param destination Destination path
+ * @param projectName Optional project name for error context
+ */
+export async function createSymlink(source: string, destination: string, projectName?: string): Promise<void> {
+  // Determine if source is a directory or file
+  const type: SymlinkType = isDirectory(source) ? 'dir' : 'file';
+  safeSymlink(source, destination, type, projectName);
+}
+
+/**
+ * Symlink all files and directories from source to destination, excluding specified patterns
+ * @param sourceDir Source directory
+ * @param destDir Destination directory
+ * @param excludePatterns Patterns to exclude
+ * @param projectName Optional project name for error context
+ */
+export async function symlinkProjectFiles(
+  sourceDir: string,
+  destDir: string,
+  excludePatterns: readonly string[] = [],
+  projectName?: string
+): Promise<void> {
+  const entries = getDirectoryEntries(sourceDir, excludePatterns);
+  
+  for (const entry of entries) {
+    const sourcePath = path.join(sourceDir, entry);
+    const destPath = path.join(destDir, entry);
+    
+    await createSymlink(sourcePath, destPath, projectName);
+  }
 }
