@@ -8,20 +8,6 @@
     "link-deps": {
       "executor": "@yharooer/godot-build-tools:link-deps",
       "outputs": ["{projectRoot}/_addons"]
-    },
-    "build": {
-      "executor": "nx:run-commands",
-      "dependsOn": [
-        {
-          "target": "build",
-          "projects": "dependencies"
-        }
-      ],
-      "options": {
-        "commands": ["node godot-build-tools/link-deps.js"],
-        "parallel": false
-      },
-      "outputs": ["{workspaceRoot}/sample_game/_addons"]
     }
   }
 }

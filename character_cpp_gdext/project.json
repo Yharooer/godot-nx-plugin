@@ -6,17 +6,7 @@
   "implicitDependencies": ["character-common"],
   "targets": {
     "build": {
-      "executor": "nx:run-commands",
-      "dependsOn": [
-        { "target": "build", "projects": "dependencies" }
-      ],
-      "options": {
-        "commands": [
-          "node godot-build-tools/build-subproject.js",
-          "node godot-build-tools/link-deps.js"
-        ],
-        "parallel": false
-      },
+      "executor": "@yharooer/godot-build-tools:gdextension",
       "outputs": ["{projectRoot}/build", "{projectRoot}/_addons"]
     }
   }

@@ -48,7 +48,7 @@
   - Validate: Test GodotSymlinkStep on character_common to verify build directory structure
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 5.3_
 
-- [ ] 7. Create godot-library executor
+- [x] 7. Create godot-library executor
   - Implement godot-library executor that orchestrates dependency linking and build steps
   - Add proper build pipeline execution with error handling
   - Integrate with NX caching and output tracking
@@ -56,7 +56,7 @@
   - Validate: Test godot-library executor on character_common (no dependencies) to verify complete build pipeline
   - _Requirements: 3.2, 4.1, 4.4, 7.2_
 
-- [ ] 8. Update existing projects to use new build system
+- [x] 8. Update existing projects to use new build system
   - Update character_common project.json to use godot-library executor
   - Update character_gdscript project.json to use godot-library executor
   - Update sample_game project.json to use link-deps executor
