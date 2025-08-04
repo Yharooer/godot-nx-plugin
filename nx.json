@@ -1,6 +1,9 @@
 {
-  "npmScope": "godot",
-  "plugins": ["@nx/workspace"],
+  "npmScope": "yharooer",
+  "plugins": [
+    "@nx/workspace",
+    "@yharooer/godot-build-tools"
+  ],
   "workspaceLayout": {
     "appsDir": "",
     "libsDir": ""
@@ -12,7 +15,9 @@
   "targetDefaults": {
     "build": {
       "cache": true,
-      "dependsOn": ["^build"]
+      "dependsOn": [
+        "^build"
+      ]
     }
   },
   "$schema": "./node_modules/nx/schemas/nx-schema.json"

@@ -36,7 +36,10 @@
     "allowUnusedLabels": false,
     "paths": {
       "@yharooer/godot-build-tools": [
-        "godot-build-tools/lib/index.ts"
+        "godot-build-tools/build/lib/index.d.ts"
+      ],
+      "@yharooer/godot-build-tools/*": [
+        "godot-build-tools/build/lib/*"
       ]
     }
   },

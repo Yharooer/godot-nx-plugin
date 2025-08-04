@@ -4,7 +4,13 @@
   "private": true,
   "scripts": {
     "nx": "nx",
-    "build": "nx run sample-game:build"
+    "build": "nx run-many --target=build --all",
+    "build:godot-build-tools": "nx run godot-build-tools:build",
+    "build:character-common": "nx run character-common:build",
+    "build:character-gdscript": "nx run character-gdscript:build",
+    "build:sample-game": "nx run sample-game:build",
+    "clean": "nx run-many --target=clean --all",
+    "graph": "nx graph"
   },
   "devDependencies": {
     "@nx/js": "^21.3.7",
