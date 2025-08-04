@@ -5,6 +5,10 @@
   "projectType": "application",
   "implicitDependencies": ["character-gdscript"],
   "targets": {
+    "link-deps": {
+      "executor": "@yharooer/godot-build-tools:link-deps",
+      "outputs": ["{projectRoot}/_addons"]
+    },
     "build": {
       "executor": "nx:run-commands",
       "dependsOn": [

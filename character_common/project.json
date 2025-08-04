@@ -5,14 +5,7 @@
   "projectType": "library",
   "targets": {
     "build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "commands": [
-          "node godot-build-tools/build-subproject.js",
-          "node godot-build-tools/link-deps.js"
-        ],
-        "parallel": false
-      },
+      "executor": "@yharooer/godot-build-tools:godot-library",
       "outputs": ["{projectRoot}/build", "{projectRoot}/_addons"]
     }
   }
