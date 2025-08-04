@@ -9,7 +9,7 @@
 import { BuildStep, BuildContext } from '../core/interfaces';
 import { FileSystemError } from '../core/errors';
 import {
-  ensureDirectoryExists,
+  cleanAndCreateDir,
   symlinkProjectFiles
 } from '../utils/file-operations';
 
@@ -44,8 +44,8 @@ export class GodotSymlinkStep implements BuildStep {
 
   async execute(context: BuildContext): Promise<void> {
     try {
-      // Ensure build directory exists
-      await ensureDirectoryExists(context.buildDir);
+      // Clean and recreate build directory to ensure a fresh start
+      cleanAndCreateDir(context.buildDir, context.projectName);
 
       // Combine default and custom exclude patterns
       const excludePatterns = [
@@ -57,7 +57,8 @@ export class GodotSymlinkStep implements BuildStep {
       await symlinkProjectFiles(
         context.projectRoot,
         context.buildDir,
-        excludePatterns
+        excludePatterns,
+        context.projectName
       );
 
     } catch (error) {

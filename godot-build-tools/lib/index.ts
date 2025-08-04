@@ -4,3 +4,4 @@ export * from './core';
 export * from './utils';
 export * from './executors';
 export * from './build-steps';
+export * from './project-types';
