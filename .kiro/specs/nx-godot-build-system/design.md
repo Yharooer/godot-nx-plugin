@@ -69,6 +69,8 @@ The build system follows the @nx/js pattern with these main components:
 1. **Executors**: NX executors that can be referenced in project.json files (similar to @nx/js:tsc)
 2. **Project Type Implementations**: Specific logic for different project types (Godot, GDExtension, etc.)
 3. **Shared Utilities**: Common functionality for file operations, dependency resolution, etc.
+4. **Build Steps**: Modular build steps that can be composed into build pipelines
+5. **Compilation Infrastructure**: Shared compilation logic for C++ and Rust projects
 
 The package structure mirrors @nx/js:
 ```
@@ -76,13 +78,170 @@ godot-build-tools/
 ├── src/
 │   ├── executors/
 │   │   ├── godot-library/      # For Godot library projects
-│   │   ├── gdextension/        # Future: For GDExtension projects
+│   │   ├── gdextension/        # For C++/Rust GDExtension projects
+│   │   ├── gdextension-setup/  # IDE setup for GDExtension projects
 │   │   ├── godot-game/         # Future: For Godot game projects
 │   │   └── link-deps/          # Standalone dependency linking
 │   ├── project-types/
+│   │   ├── godot-project-type.ts
+│   │   ├── cpp-gdextension-type.ts
+│   │   └── rust-gdextension-type.ts
+│   ├── build-steps/
+│   │   ├── dependency-linking-step.ts
+│   │   ├── godot-symlink-step.ts
+│   │   ├── cpp-compilation-step.ts
+│   │   ├── rust-compilation-step.ts
+│   │   ├── gdextension-bundle-step.ts
+│   │   └── godot-cpp-build-step.ts
+│   ├── compilation/
+│   │   ├── godot-cpp-manager.ts
+│   │   ├── platform-config.ts
+│   │   └── toolchain-detector.ts
 │   └── utils/
 ├── executors.json
 └── package.json
+```
+
+## GDExtension Architecture
+
+### Compilation Infrastructure
+
+The GDExtension build system provides shared infrastructure for compiling native code:
+
+```mermaid
+graph TB
+    subgraph "GDExtension Build Pipeline"
+        subgraph "C++ Pipeline"
+            GodotCpp[Godot-CPP Build]
+            CppComp[C++ Compilation]
+            CppOrganize[Organize Compiled Binaries]
+        end
+        
+        subgraph "Rust Pipeline"
+            RustComp[Rust Compilation via Cargo]
+            RustOrganize[Organize Compiled Binaries]
+        end
+        
+        subgraph "Shared Infrastructure"
+            GDExtFile[Generate .gdextension File]
+        end
+    end
+    
+    GodotCpp --> CppComp
+    CppComp --> CppOrganize
+    RustComp --> RustOrganize
+    
+    CppOrganize --> GDExtFile
+    RustOrganize --> GDExtFile
+```
+
+### Godot-CPP Management
+
+For C++ projects, the system manages godot-cpp as a shared dependency:
+
+```typescript
+interface GodotCppManager {
+  /**
+   * Ensures godot-cpp is built for the specified version and platforms
+   * Returns the path to the built godot-cpp artifacts
+   */
+  ensureGodotCpp(version: string, platforms: Platform[]): Promise<string>;
+  
+  /**
+   * Gets the cached godot-cpp path if available
+   */
+  getCachedGodotCpp(version: string): string | null;
+  
+  /**
+   * Cleans old godot-cpp builds to save disk space
+   */
+  cleanOldBuilds(): Promise<void>;
+}
+```
+
+The godot-cpp builds are cached in a shared location (e.g., `tmp/godot-cpp-builds/`) and reused across projects.
+
+### NX C++ Project Integration
+
+Since NX doesn't have built-in C++ support, we'll create a general-purpose C++ project type that can be used independently or as dependencies for GDExtension projects:
+
+```typescript
+// Future: General NX C++ project type
+class NxCppProjectType implements ProjectType {
+  readonly name = 'nx-cpp';
+  
+  createBuildPipeline(context: BuildContext): BuildStep[] {
+    return [
+      new CppCompilationStep(),  // Uses SCons or CMake
+      new CppLibraryBundleStep() // Creates static/dynamic libraries
+    ];
+  }
+}
+```
+
+This allows for:
+- **Standalone C++ libraries**: Regular C++ projects that can be consumed by other C++ projects
+- **GDExtension dependencies**: C++ libraries that GDExtension projects can link against
+- **Third-party integration**: Easy integration with external C++ libraries like Boost
+
+### C++ Build System Integration
+
+For C++ GDExtension projects, we'll use CMake as the build system. CMake is the most modern and widely adopted C++ build system, with excellent cross-platform support, toolchain detection, and IDE integration:
+
+```typescript
+interface CMakeWrapper {
+  /**
+   * Builds a C++ GDExtension project using CMake
+   * CMake handles toolchain detection, cross-compilation, and platform-specific settings
+   */
+  buildProject(options: CppBuildOptions): Promise<void>;
+}
+
+interface CppBuildOptions {
+  readonly projectRoot: string;
+  readonly godotCppPath: string;
+  readonly platforms: string[];        // e.g., ["windows.x86_64", "macos.universal", "linux.arm64"]
+  readonly targets: string[];          // e.g., ["debug", "release", "editor"]
+  readonly thirdPartyLibs?: string[];  // Additional C++ libraries
+  readonly nxCppDependencies?: string[]; // Other NX C++ projects
+}
+```
+
+This approach:
+- **Modern build system**: CMake is the industry standard for C++ projects with excellent tooling support
+- **Superior IDE integration**: CMake generates native IDE project files and compile_commands.json automatically
+- **Excellent cross-compilation**: CMake has mature cross-compilation support with toolchain files
+- **Package management**: CMake integrates well with vcpkg, Conan, and other C++ package managers
+- **Widespread adoption**: Most C++ developers are familiar with CMake, making the system more accessible
+
+### Platform and Architecture Configuration
+
+Developers specify platforms using the intuitive format `platform.architecture`:
+
+```typescript
+interface PlatformTarget {
+  readonly platform: string;      // "windows", "macos", "linux", "android", "ios", "web"
+  readonly architecture: string;  // "x86_64", "arm64", "rv64", "wasm32", "universal"
+  readonly target: string;        // "debug", "release", "editor"
+}
+
+// Platform specification examples:
+// "windows.x86_64" -> Windows 64-bit Intel/AMD
+// "macos.universal" -> macOS Universal Binary (x86_64 + arm64)
+// "linux.arm64" -> Linux 64-bit ARM
+// "android.arm64" -> Android 64-bit ARM
+// "ios.universal" -> iOS Universal Framework
+// "web.wasm32" -> WebAssembly 32-bit
+
+// Internally converted to build system specific targets:
+function parsePlatformTarget(platformSpec: string): PlatformTarget {
+  const [platform, architecture] = platformSpec.split('.');
+  return { platform, architecture, target: 'debug' }; // target added during build
+}
+
+// File naming follows Godot convention:
+// lib{project}.{platform}.template_{target}.{arch}.{ext}
+// e.g., "libexample.windows.template_release.x86_64.dll"
 ```
 
 ## Components and Interfaces
@@ -130,11 +289,18 @@ Following the @nx/js pattern, the system provides specialized executors:
    - Creates both _addons/ and build/ directories
 
 2. **GDExtension Build Executor** (`godot-build-tools:gdextension`)
-   - For C++/Rust GDExtension projects (future)
+   - For C++/Rust GDExtension projects
+   - Auto-detects project type (C++ or Rust) based on project structure
    - Executes compilation followed by bundling
-   - Creates build/ directory with compiled artifacts
+   - Creates build/ directory with compiled artifacts and .gdextension file
 
-3. **Dependency Link Executor** (`godot-build-tools:link-deps`)
+3. **GDExtension Setup Executor** (`godot-build-tools:gdextension-setup`)
+   - Sets up IDE integration for C++ GDExtension projects only
+   - Generates compile_commands.json and configures IDE hints for godot-cpp
+   - Not needed for Rust projects (Cargo handles IDE integration automatically)
+   - Can be run independently of the build process
+
+4. **Dependency Link Executor** (`godot-build-tools:link-deps`)
    - Standalone executor for dependency linking
    - Used by Godot library and future Godot game projects
    - Can be used independently for IDE support (e.g., prepare step for games)
@@ -159,16 +325,32 @@ class GodotProjectType implements ProjectType {
 }
 ```
 
-#### GDExtension Project Type (Future)
+#### C++ GDExtension Project Type
 
 ```typescript
-class GDExtensionProjectType implements ProjectType {
-  readonly name = 'gdextension';
+class CppGDExtensionProjectType implements ProjectType {
+  readonly name = 'cpp-gdextension';
   
   createBuildPipeline(context: BuildContext): BuildStep[] {
     return [
-      new CompilationStep(),  // Compiles C++/Rust code
-      new BundlingStep()      // Bundles into GDExtension format in build/
+      new GodotCppBuildStep(),      // Builds godot-cpp if needed
+      new CppCompilationStep(),     // Compiles C++ source files
+      new GDExtensionBundleStep()   // Bundles into GDExtension format
+    ];
+  }
+}
+```
+
+#### Rust GDExtension Project Type
+
+```typescript
+class RustGDExtensionProjectType implements ProjectType {
+  readonly name = 'rust-gdextension';
+  
+  createBuildPipeline(context: BuildContext): BuildStep[] {
+    return [
+      new RustCompilationStep(),    // Compiles Rust source using Cargo
+      new GDExtensionBundleStep()   // Bundles into GDExtension format
     ];
   }
 }
@@ -187,6 +369,60 @@ class GodotGameProjectType implements ProjectType {
     ];
   }
 }
+```
+
+### GDExtension Bundling
+
+The GDExtension bundling process creates the final artifacts that can be consumed by Godot projects:
+
+```typescript
+interface GDExtensionBundle {
+  readonly projectName: string;
+  readonly buildDir: string;
+  readonly binaries: CompiledBinary[];
+  readonly dependencies: GDExtensionDependency[];
+  readonly config: GDExtensionConfig;
+}
+
+interface CompiledBinary {
+  readonly platform: string;
+  readonly buildType: 'debug' | 'release';
+  readonly filePath: string;
+  readonly fileName: string; // e.g., "libexample.windows.template_release.x86_64.dll"
+}
+
+interface GDExtensionConfig {
+  readonly entrySymbol: string;
+  readonly compatibilityMinimum: string;
+  readonly reloadable: boolean;
+}
+```
+
+The bundling process:
+
+1. **Organize Compiled Binaries**: Move compiled libraries from tmp/ to build/bin/ with correct Godot naming convention
+2. **Generate .gdextension File**: Create configuration file with library paths and metadata
+3. **Handle Dependencies**: Include any dynamic dependencies in the dependencies section
+4. **Clean Intermediate Files**: Remove tmp/ build files, keeping only final artifacts in build/
+
+Example generated `.gdextension` file:
+
+```ini
+[configuration]
+entry_symbol = "example_library_init"
+compatibility_minimum = "4.4"
+reloadable = true
+
+[libraries]
+macos.debug = "bin/libexample.macos.template_debug.framework"
+macos.release = "bin/libexample.macos.template_release.framework"
+windows.debug.x86_64 = "bin/libexample.windows.template_debug.x86_64.dll"
+windows.release.x86_64 = "bin/libexample.windows.template_release.x86_64.dll"
+linux.debug.x86_64 = "bin/libexample.linux.template_debug.x86_64.so"
+linux.release.x86_64 = "bin/libexample.linux.template_release.x86_64.so"
+
+[dependencies]
+# Only included if dynamic dependencies exist
 ```
 
 ## Data Models
@@ -208,16 +444,62 @@ Projects define their configuration in `project.json` using the appropriate exec
 }
 ```
 
-For GDExtension projects (future):
+For C++ GDExtension projects:
 
 ```json
 {
-  "name": "example-gdextension-project",
+  "name": "example-cpp-gdextension",
   "projectType": "library",
   "targets": {
     "build": {
       "executor": "godot-build-tools:gdextension",
-      "outputs": ["{projectRoot}/build"]
+      "outputs": ["{projectRoot}/build"],
+      "options": {
+        "godotCppVersion": "4.4",
+        "platforms": [
+          "windows.x86_64",
+          "windows.arm64", 
+          "macos.universal",
+          "linux.x86_64",
+          "linux.arm64",
+          "android.arm64",
+          "ios.universal"
+        ],
+        "targets": ["debug", "release"],
+        "linkType": "dynamic",
+        "thirdPartyLibs": ["boost", "some-other-lib"],
+        "nxCppDependencies": ["some-nx-cpp-project"]
+      }
+    },
+    "setup": {
+      "executor": "godot-build-tools:gdextension-setup"
+    }
+  }
+}
+```
+
+For Rust GDExtension projects:
+
+```json
+{
+  "name": "example-rust-gdextension",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "godot-build-tools:gdextension",
+      "outputs": ["{projectRoot}/build"],
+      "options": {
+        "platforms": [
+          "windows.x86_64",
+          "macos.universal", 
+          "linux.x86_64",
+          "linux.arm64",
+          "web.wasm32"
+        ],
+        "targets": ["debug", "release"],
+        "compatibilityMinimum": "4.1",
+        "reloadable": true
+      }
     }
   }
 }
@@ -354,7 +636,22 @@ godot-build-tools/
 2. Create comprehensive documentation
 3. Add example projects and tutorials
 
-### Phase 5: Future Extensibility
-1. Design plugin system for new project types
-2. Prepare architecture for GDExtension support
-3. Implement caching and performance optimizations
+### Phase 5: C++ Project Foundation
+1. Design general-purpose NX C++ project type for standalone libraries using CMake
+2. Implement CMake wrapper with cross-platform support and toolchain detection
+3. Add third-party C++ library integration (vcpkg, Conan, system packages)
+4. Create IDE setup executor that generates CMake project files and compile_commands.json
+
+### Phase 6: GDExtension Implementation
+1. Implement GDExtension project type detection (C++ vs Rust based on file structure)
+2. Create godot-cpp management system with CMake integration and caching
+3. Implement C++ GDExtension compilation pipeline extending the general C++ project type
+4. Implement Rust compilation pipeline using Cargo with cross-compilation targets
+5. Create shared binary organization and .gdextension file generation system
+6. Add support for multiple build targets (debug/release) by default
+
+### Phase 7: Integration and Testing
+1. Update sample projects to use GDExtension dependencies
+2. Test multi-platform, multi-architecture, multi-target builds
+3. Validate CMake integration and godot-cpp caching
+4. Optimize build performance and NX caching integration

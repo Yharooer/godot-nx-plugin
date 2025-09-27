@@ -93,3 +93,70 @@ This feature involves improving an existing NX-based build system for Godot game
 2. WHEN tsconfig files are structured THEN they SHALL properly extend base configurations and avoid duplication
 3. WHEN IDE integration is used THEN it SHALL provide proper IntelliSense and error detection
 4. WHEN code is written THEN it SHALL follow consistent formatting and linting rules
+
+### Requirement 9
+
+**User Story:** As a developer, I want to build C++ GDExtension projects, so that I can create high-performance native extensions for Godot games.
+
+#### Acceptance Criteria
+
+1. WHEN a C++ GDExtension project is configured THEN it SHALL specify the godot-cpp version to use
+2. WHEN a C++ GDExtension project is built THEN it SHALL compile source files from the src directory using the specified godot-cpp dependency
+3. WHEN compilation occurs THEN it SHALL support multiple target platforms (macos, ios, windows, linux, android, web)
+4. WHEN compilation occurs THEN it SHALL support both debug and release build types
+5. WHEN compilation completes THEN it SHALL produce platform-specific library files with correct naming conventions
+6. WHEN third-party C++ libraries are specified THEN they SHALL be included in the compilation process
+7. WHEN other NX C++ projects are dependencies THEN they SHALL be linked during compilation
+8. WHEN a setup executor is run THEN it SHALL configure IDE hints for development tools like CLion/Rider/VSCode
+
+### Requirement 10
+
+**User Story:** As a developer, I want to build Rust GDExtension projects, so that I can create memory-safe native extensions for Godot games.
+
+#### Acceptance Criteria
+
+1. WHEN a Rust GDExtension project is configured THEN it SHALL use Cargo for compilation with the godot dependency
+2. WHEN a Rust GDExtension project is built THEN it SHALL compile as a cdylib crate type
+3. WHEN compilation occurs THEN it SHALL support multiple target platforms using Rust's cross-compilation
+4. WHEN compilation occurs THEN it SHALL support both debug and release build types
+5. WHEN compilation completes THEN it SHALL produce platform-specific library files with correct naming conventions
+6. WHEN dynamic linking is requested THEN it SHALL support dynamic linking options where possible
+7. WHEN existing NX Rust integration exists THEN it SHALL leverage and extend that integration
+
+### Requirement 11
+
+**User Story:** As a developer, I want GDExtension projects to produce properly bundled artifacts, so that they can be consumed by Godot games and libraries.
+
+#### Acceptance Criteria
+
+1. WHEN a GDExtension project is built THEN it SHALL create a build directory containing all artifacts
+2. WHEN artifacts are created THEN compiled binaries SHALL be placed in build/bin/ with platform-specific naming
+3. WHEN artifacts are created THEN a .gdextension configuration file SHALL be generated in the build directory
+4. WHEN the .gdextension file is generated THEN it SHALL contain correct library paths, entry symbols, and compatibility information
+5. WHEN dependencies are dynamically linked THEN they SHALL be included in the dependencies section of the .gdextension file
+6. WHEN the build completes THEN only final artifacts SHALL remain in the build directory (intermediate files in tmp/)
+7. WHEN godot-cpp version is specified THEN the compatibility_minimum SHALL match that version
+
+### Requirement 12
+
+**User Story:** As a developer, I want GDExtension projects to integrate with the existing dependency system, so that Godot games can consume them seamlessly.
+
+#### Acceptance Criteria
+
+1. WHEN a GDExtension project is built THEN its build artifacts SHALL be available for symlinking to dependent projects
+2. WHEN a Godot project depends on a GDExtension project THEN the GDExtension's build directory SHALL be symlinked to _addons
+3. WHEN multiple GDExtension projects exist THEN they SHALL be able to share common build infrastructure (like godot-cpp)
+4. WHEN GDExtension projects have their own dependencies THEN the dependency resolution SHALL work transitively
+5. WHEN sample projects are updated THEN they SHALL demonstrate the integration between GDExtension and Godot library projects
+
+### Requirement 13
+
+**User Story:** As a developer, I want efficient build processes for GDExtension projects, so that compilation times are minimized and resources are shared.
+
+#### Acceptance Criteria
+
+1. WHEN multiple C++ GDExtension projects exist THEN they SHALL share a common godot-cpp build to avoid redundant compilation
+2. WHEN godot-cpp is built THEN it SHALL be cached and reused across projects with the same version
+3. WHEN cross-platform compilation is performed THEN it SHALL use appropriate toolchains and build tools
+4. WHEN builds are cached THEN NX caching SHALL work correctly with GDExtension artifacts
+5. WHEN builds fail THEN clear error messages SHALL be provided with actionable debugging information

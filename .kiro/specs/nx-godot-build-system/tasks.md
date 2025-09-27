@@ -72,25 +72,82 @@
   - Validate: Run nx graph to verify dependency relationships are correctly displayed
   - _Requirements: 1.2, 2.1, 2.3, 7.1, 7.3_
 
-- [ ] 10. Add comprehensive error handling and logging
-  - Implement BuildError class with proper error categorization
-  - Add detailed logging throughout build pipeline with context
-  - Implement fail-fast behavior when any project build fails
-  - Add retry logic for transient file system operations
-  - Validate: Test error scenarios (missing dependencies, permission errors) to verify proper error handling
-  - _Requirements: 4.1, 6.4, 7.1_
+- [x] 10. Implement general NX C++ project foundation
+  - Create CMakeWrapper class for C++ compilation with cross-platform support
+  - Implement platform target parsing (e.g., "windows.x86_64" -> platform + architecture)
+  - Add toolchain detection and CMake configuration generation
+  - Create NxCppProjectType with CMake-based build pipeline
+  - Validate: Test basic C++ library compilation with CMake wrapper
+  - _Requirements: 9.1, 9.3, 9.4, 9.6, 13.3_
 
-- [ ] 11. Test and validate the build system
-  - Test building individual projects (character_common, character_gdscript)
-  - Test building projects with dependencies (sample_game)
-  - Verify proper _addons and build directory creation
-  - Test error scenarios and recovery mechanisms
-  - Validate NX dependency graph shows correct relationships
-  - _Requirements: 2.4, 4.3, 4.4, 6.2, 6.3_
+- [ ] 11. Implement Rust GDExtension compilation pipeline
+  - Create RustGDExtensionProjectType with Cargo integration
+  - Implement RustCompilationStep with cross-compilation support
+  - Add Cargo.toml generation with godot dependency and cdylib crate type
+  - Support dynamic linking options where possible
+  - Validate: Test Rust GDExtension compilation for multiple platforms and targets
+  - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7_
 
-- [ ] 12. Create documentation and examples
-  - Document the new executor usage and configuration
-  - Create migration guide for existing projects
-  - Add inline code documentation and JSDoc comments
-  - Document the extensible architecture for future project types
-  - _Requirements: 5.1, 5.2, 8.3, 8.4_
+- [ ] 12. Implement GDExtension bundling system
+  - Create shared binary organization step (OrganizeCompiledBinariesStep)
+  - Implement .gdextension file generation with correct library paths
+  - Add support for dynamic dependency inclusion in .gdextension file
+  - Ensure proper Godot naming convention for compiled binaries
+  - Validate: Test complete GDExtension bundle creation for both C++ and Rust projects
+  - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 11.7_
+
+- [ ] 13. Implement C++ third-party library integration
+  - Add support for vcpkg, Conan, and system package integration in CMake builds
+  - Implement NX C++ project dependency linking
+  - Create CMake configuration templates for common scenarios
+  - Add library discovery and linking logic
+  - Validate: Test C++ project with Boost dependency and NX C++ project dependency
+  - _Requirements: 9.6, 9.7, 13.4_
+
+- [ ] 14. Implement godot-cpp management system
+  - Create GodotCppManager class with version-based caching
+  - Implement godot-cpp download and CMake-based compilation
+  - Add shared caching in tmp/godot-cpp-builds/ directory
+  - Create cleanup mechanism for old godot-cpp builds
+  - Validate: Test godot-cpp build caching across multiple projects
+  - _Requirements: 9.1, 13.1, 13.2_
+
+- [ ] 15. Implement C++ GDExtension compilation pipeline
+  - Create CppGDExtensionProjectType extending NxCppProjectType
+  - Implement CppCompilationStep with godot-cpp integration
+  - Add multi-platform, multi-target compilation support
+  - Integrate with existing godot-cpp management system
+  - Validate: Test C++ GDExtension compilation for multiple platforms and targets
+  - _Requirements: 9.2, 9.3, 9.4, 9.5, 13.3_
+
+- [ ] 16. Implement GDExtension executor with project type detection
+  - Create unified gdextension executor that auto-detects C++ vs Rust projects
+  - Implement project type detection based on file structure (src/*.cpp vs src/*.rs)
+  - Add platform target parsing and validation
+  - Support multiple build targets (debug/release) by default
+  - Validate: Test gdextension executor on both character_cpp_gdext and character_rust_gdext
+  - _Requirements: 9.1, 10.1, 11.1, 13.5_
+
+- [ ] 17. Update sample projects with GDExtension integration
+  - Create Cargo.toml for character_rust_gdext project
+  - Update character_cpp_gdext and character_rust_gdext project.json configurations
+  - Add both GDExtension projects as dependencies to sample_game
+  - Test complete dependency chain: GDExtension -> build -> symlink to sample_game
+  - Validate: Ensure sample_game can consume both C++ and Rust GDExtension artifacts
+  - _Requirements: 12.1, 12.2, 12.4, 12.5_
+
+- [ ] 18. Optimize build performance and caching
+  - Implement NX caching integration for GDExtension builds
+  - Add build artifact fingerprinting for cache invalidation
+  - Optimize godot-cpp sharing across multiple projects
+  - Add parallel compilation support for multiple platforms
+  - Validate: Test build performance improvements and cache effectiveness
+  - _Requirements: 13.1, 13.2, 13.4, 13.5_
+
+- [ ] 19. Add comprehensive error handling and validation
+  - Implement detailed error messages for compilation failures
+  - Add platform target validation and helpful error suggestions
+  - Create troubleshooting guides for common build issues
+  - Add dependency validation for third-party libraries
+  - Validate: Test error scenarios and ensure clear, actionable error messages
+  - _Requirements: 13.5, 9.8, 10.7_
