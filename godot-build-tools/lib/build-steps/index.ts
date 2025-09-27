@@ -4,3 +4,5 @@
 
 export * from './dependency-linking-step';
 export * from './godot-symlink-step';
+export * from './rust-compilation-step';
+export * from './gdextension-bundle-step';

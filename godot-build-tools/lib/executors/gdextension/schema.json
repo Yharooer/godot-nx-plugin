@@ -20,15 +20,44 @@
       "description": "Clean the build directory before building",
       "default": true
     },
-    "buildType": {
-      "type": "string",
-      "description": "Build type (debug or release)",
-      "enum": ["debug", "release"],
-      "default": "debug"
+    "targets": {
+      "type": "array",
+      "description": "Build targets (debug, release, or both)",
+      "items": {
+        "type": "string",
+        "enum": ["debug", "release"]
+      },
+      "default": ["debug", "release"]
     },
-    "target": {
+    "platforms": {
+      "type": "array",
+      "description": "Platform targets to build for",
+      "items": {
+        "type": "string",
+        "pattern": "^(windows|macos|linux|android|ios|web)\\.(x86_64|arm64|universal|wasm32|rv64)$"
+      },
+      "default": ["macos.universal"]
+    },
+    "compatibilityMinimum": {
       "type": "string",
-      "description": "Target platform (auto-detected if not specified)"
+      "description": "Godot compatibility minimum version",
+      "pattern": "^\\d+\\.\\d+$",
+      "default": "4.1"
+    },
+    "reloadable": {
+      "type": "boolean",
+      "description": "Whether the extension should be reloadable",
+      "default": true
+    },
+    "entrySymbol": {
+      "type": "string",
+      "description": "Entry symbol for the GDExtension (auto-generated if not specified)"
+    },
+    "linkType": {
+      "type": "string",
+      "description": "Dynamic linking options where possible",
+      "enum": ["static", "dynamic"],
+      "default": "dynamic"
     }
   },
   "additionalProperties": false

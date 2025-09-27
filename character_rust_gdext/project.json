@@ -3,11 +3,16 @@
   "root": "character_rust_gdext",
   "sourceRoot": "character_rust_gdext/src",
   "projectType": "library",
-  "implicitDependencies": ["character-common"],
+  "implicitDependencies": [
+    "character-common"
+  ],
   "targets": {
     "build": {
       "executor": "@yharooer/godot-build-tools:gdextension",
-      "outputs": ["{projectRoot}/build", "{projectRoot}/_addons"]
+      "outputs": [
+        "{projectRoot}/build",
+        "{projectRoot}/_addons"
+      ]
     }
   }
 }

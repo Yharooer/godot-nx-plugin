@@ -1,0 +1,31 @@
+{
+  "name": "test_cpp_library",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "test_cpp_library/src",
+  "targets": {
+    "build": {
+      "executor": "@yharooer/godot-build-tools:cpp-library",
+      "outputs": [
+        "{projectRoot}/build"
+      ],
+      "options": {
+        "platforms": [
+        ],
+        "targets": [
+          "debug",
+          "release"
+        ],
+        "includeDirs": [
+          "./include"
+        ],
+        "cmakeVariables": {
+          "CMAKE_CXX_STANDARD": "17"
+        }
+      }
+    },
+    "clean": {
+      "executor": "@yharooer/godot-build-tools:clean"
+    }
+  }
+}
