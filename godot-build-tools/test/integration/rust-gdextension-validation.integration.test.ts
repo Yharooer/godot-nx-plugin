@@ -75,9 +75,10 @@ describe('Rust GDExtension Pipeline Validation', () => {
 
       const pipeline = projectType.createBuildPipeline(context);
       
-      expect(pipeline).toHaveLength(2);
+      expect(pipeline).toHaveLength(3);
       expect(pipeline[0].name).toBe('Rust GDExtension Compilation');
-      expect(pipeline[1].name).toBe('GDExtension Bundle');
+      expect(pipeline[1].name).toBe('Organize Compiled Binaries');
+      expect(pipeline[2].name).toBe('GDExtension Bundle');
     });
 
     it('should handle minimal configuration', () => {
@@ -97,9 +98,10 @@ describe('Rust GDExtension Pipeline Validation', () => {
 
       const pipeline = projectType.createBuildPipeline(context);
       
-      expect(pipeline).toHaveLength(2);
+      expect(pipeline).toHaveLength(3);
       expect(pipeline[0].name).toBe('Rust GDExtension Compilation');
-      expect(pipeline[1].name).toBe('GDExtension Bundle');
+      expect(pipeline[1].name).toBe('Organize Compiled Binaries');
+      expect(pipeline[2].name).toBe('GDExtension Bundle');
     });
 
     it('should handle custom entry symbol configuration', () => {
@@ -120,7 +122,7 @@ describe('Rust GDExtension Pipeline Validation', () => {
 
       const pipeline = projectType.createBuildPipeline(context);
       
-      expect(pipeline).toHaveLength(2);
+      expect(pipeline).toHaveLength(3);
     });
   });
 

@@ -8,13 +8,15 @@
 
 import { ProjectType, BuildStep, BuildContext, ProjectTypeEnum } from '../core/interfaces';
 import { RustCompilationStep, RustCompilationStepOptions } from '../build-steps/rust-compilation-step';
+import { OrganizeCompiledBinariesStep, PlatformTarget } from '../build-steps/organize-compiled-binaries-step';
 import { GDExtensionBundleStep, GDExtensionBundleStepOptions } from '../build-steps/gdextension-bundle-step';
+import { GDExtensionAddonStep, GDExtensionAddonStepOptions } from '../build-steps/gdextension-addon-step';
 
 /**
  * Options for the Rust GDExtension project type
  */
-export interface RustGDExtensionProjectTypeOptions extends RustCompilationStepOptions, GDExtensionBundleStepOptions {
-  /** Entry symbol for the GDExtension (defaults to project name + "_init") */
+export interface RustGDExtensionProjectTypeOptions extends RustCompilationStepOptions, GDExtensionBundleStepOptions, GDExtensionAddonStepOptions {
+  /** Entry symbol for the GDExtension (defaults to "gdext_rust_init") */
   readonly entrySymbol?: string;
 }
 
@@ -26,7 +28,7 @@ export class RustGDExtensionProjectType implements ProjectType {
 
   constructor(private readonly options: RustGDExtensionProjectTypeOptions = {}) {}
 
-  createBuildPipeline(context: BuildContext): readonly BuildStep[] {
+  createBuildPipeline(_context: BuildContext): readonly BuildStep[] {
     // Extract options for each step
     const compilationOptions: RustCompilationStepOptions = {
       ...(this.options.platforms && { platforms: this.options.platforms }),
@@ -37,24 +39,56 @@ export class RustGDExtensionProjectType implements ProjectType {
     };
 
     const bundleOptions: GDExtensionBundleStepOptions = {
-      entrySymbol: this.options.entrySymbol || this.generateDefaultEntrySymbol(context.projectName),
+      entrySymbol: this.options.entrySymbol || 'gdext_rust_init',
       ...(this.options.compatibilityMinimum && { compatibilityMinimum: this.options.compatibilityMinimum }),
       ...(this.options.reloadable !== undefined && { reloadable: this.options.reloadable }),
+      ...(this.options.dynamicDependencies && { dynamicDependencies: this.options.dynamicDependencies }),
       projectType: 'rust'
+    };
+
+    // Parse platform targets for the organize step
+    const platforms = this.options.platforms || ['windows.x86_64', 'macos.universal', 'linux.x86_64'];
+    const targets = this.options.targets || ['debug', 'release'];
+    const platformTargets = this.parsePlatformTargets(platforms, targets);
+
+    const addonOptions: GDExtensionAddonStepOptions = {
+      ...(this.options.addonName && { addonName: this.options.addonName }),
+      ...(this.options.createPluginConfig !== undefined && { createPluginConfig: this.options.createPluginConfig }),
+      ...(this.options.pluginDescription && { pluginDescription: this.options.pluginDescription }),
+      ...(this.options.pluginAuthor && { pluginAuthor: this.options.pluginAuthor }),
+      ...(this.options.pluginVersion && { pluginVersion: this.options.pluginVersion })
     };
 
     return [
       new RustCompilationStep(compilationOptions),
-      new GDExtensionBundleStep(bundleOptions)
+      new OrganizeCompiledBinariesStep({
+        projectType: 'rust',
+        platformTargets
+      }),
+      new GDExtensionBundleStep(bundleOptions),
+      new GDExtensionAddonStep(addonOptions)
     ];
   }
 
+
+
   /**
-   * Generate default entry symbol based on project name
+   * Parse platform specifications into platform targets
    */
-  private generateDefaultEntrySymbol(projectName: string): string {
-    // Convert kebab-case to snake_case and add _init suffix
-    const symbolName = projectName.replace(/-/g, '_');
-    return `${symbolName}_init`;
+  private parsePlatformTargets(platforms: readonly string[], targets: readonly string[]): PlatformTarget[] {
+    const platformTargets: PlatformTarget[] = [];
+
+    for (const platformSpec of platforms) {
+      const [platform, architecture] = platformSpec.split('.');
+      if (!platform || !architecture) {
+        throw new Error(`Invalid platform specification: ${platformSpec}. Expected format: platform.architecture`);
+      }
+
+      for (const target of targets) {
+        platformTargets.push({ platform, architecture, target });
+      }
+    }
+
+    return platformTargets;
   }
 }

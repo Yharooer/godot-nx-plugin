@@ -2,7 +2,7 @@ use godot::prelude::*;
 
 mod rust_example_node2d;
 
-struct GdRustExample;
+struct CharacterRustGdext;
 
 #[gdextension]
-unsafe impl ExtensionLibrary for GdRustExample {}
+unsafe impl ExtensionLibrary for CharacterRustGdext {}

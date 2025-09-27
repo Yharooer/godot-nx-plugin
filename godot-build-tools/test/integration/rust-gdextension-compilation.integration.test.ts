@@ -66,10 +66,11 @@ describe('Rust GDExtension Compilation Integration', () => {
 
       const pipeline = projectType.createBuildPipeline(context);
       
-      expect(pipeline).toHaveLength(2);
+      expect(pipeline).toHaveLength(3);
       expect(pipeline[0]).toBeInstanceOf(RustCompilationStep);
       expect(pipeline[0].name).toBe('Rust GDExtension Compilation');
-      expect(pipeline[1].name).toBe('GDExtension Bundle');
+      expect(pipeline[1].name).toBe('Organize Compiled Binaries');
+      expect(pipeline[2].name).toBe('GDExtension Bundle');
     });
   });
 

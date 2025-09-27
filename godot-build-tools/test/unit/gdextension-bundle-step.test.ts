@@ -4,7 +4,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { GDExtensionBundleStep } from '../../lib/build-steps/gdextension-bundle-step';
+import { GDExtensionBundleStep, DynamicDependency } from '../../lib/build-steps/gdextension-bundle-step';
+import { OrganizedBinary } from '../../lib/build-steps/organize-compiled-binaries-step';
 import { BuildContext } from '../../lib/core/interfaces';
 import { FileSystemError } from '../../lib/core/errors';
 
@@ -164,9 +165,15 @@ describe('GDExtensionBundleStep', () => {
       expect(content).toContain('ios.release = "bin/libtest_gdext.ios.template_release.framework"');
     });
 
-    it('should include dependencies section when specified', async () => {
+    it('should include dynamic dependencies section when specified', async () => {
+      const dynamicDependencies: DynamicDependency[] = [
+        { platform: 'windows.x86_64', path: 'deps/some_lib.dll' },
+        { platform: 'linux.x86_64', path: 'deps/some_lib.so' },
+        { platform: 'macos.universal', path: 'deps/some_lib.dylib' }
+      ];
+
       step = new GDExtensionBundleStep({
-        dependencies: ['some.dependency.dll', 'another.dependency.so']
+        dynamicDependencies
       });
 
       mockGetDirectoryEntries.mockReturnValue([
@@ -181,8 +188,34 @@ describe('GDExtensionBundleStep', () => {
       const content = writeCall?.[1] as string;
 
       expect(content).toContain('[dependencies]');
-      expect(content).toContain('some.dependency.dll');
-      expect(content).toContain('another.dependency.so');
+      expect(content).toContain('windows.x86_64 = "deps/some_lib.dll"');
+      expect(content).toContain('linux.x86_64 = "deps/some_lib.so"');
+      expect(content).toContain('macos = "deps/some_lib.dylib"');
+    });
+
+    it('should handle multiple dependencies for the same platform', async () => {
+      const dynamicDependencies: DynamicDependency[] = [
+        { platform: 'windows.x86_64', path: 'deps/lib1.dll' },
+        { platform: 'windows.x86_64', path: 'deps/lib2.dll' }
+      ];
+
+      step = new GDExtensionBundleStep({
+        dynamicDependencies
+      });
+
+      mockGetDirectoryEntries.mockReturnValue([
+        'libtest_gdext.windows.template_debug.x86_64.dll'
+      ]);
+
+      await step.execute(mockContext);
+
+      const writeCall = mockFs.writeFileSync.mock.calls.find(call => 
+        call[0].toString().endsWith('.gdextension')
+      );
+      const content = writeCall?.[1] as string;
+
+      expect(content).toContain('[dependencies]');
+      expect(content).toContain('windows.x86_64 = ["deps/lib1.dll", "deps/lib2.dll"]');
     });
 
     it('should ignore files that do not match expected naming pattern', async () => {
@@ -238,6 +271,72 @@ describe('GDExtensionBundleStep', () => {
 
       expect(content).toContain('entry_symbol = "my_rust_extension_init"');
       expect(content).toContain('windows.debug.x86_64 = "bin/libmy_rust_extension.windows.template_debug.x86_64.dll"');
+    });
+  });
+
+  describe('organized binaries integration', () => {
+    it('should use organized binaries from context when available', async () => {
+      const organizedBinaries: OrganizedBinary[] = [
+        {
+          fileName: 'libtest_gdext.windows.template_debug.x86_64.dll',
+          platformTarget: { platform: 'windows', architecture: 'x86_64', target: 'debug' },
+          filePath: '/workspace/test-gdext/build/bin/libtest_gdext.windows.template_debug.x86_64.dll'
+        },
+        {
+          fileName: 'libtest_gdext.macos.template_release.framework',
+          platformTarget: { platform: 'macos', architecture: 'universal', target: 'release' },
+          filePath: '/workspace/test-gdext/build/bin/libtest_gdext.macos.template_release.framework'
+        }
+      ];
+
+      // Add organized binaries to context
+      (mockContext as any).organizedBinaries = organizedBinaries;
+
+      await step.execute(mockContext);
+
+      const writeCall = mockFs.writeFileSync.mock.calls.find(call => 
+        call[0].toString().endsWith('.gdextension')
+      );
+      const content = writeCall?.[1] as string;
+
+      expect(content).toContain('[libraries]');
+      expect(content).toContain('windows.debug.x86_64 = "bin/libtest_gdext.windows.template_debug.x86_64.dll"');
+      expect(content).toContain('macos.release = "bin/libtest_gdext.macos.template_release.framework"');
+
+      // Should not call getDirectoryEntries when organized binaries are available
+      expect(mockGetDirectoryEntries).not.toHaveBeenCalled();
+    });
+
+    it('should fall back to legacy discovery when no organized binaries', async () => {
+      // Don't set organized binaries in context
+      mockGetDirectoryEntries.mockReturnValue([
+        'libtest_gdext.windows.template_debug.x86_64.dll'
+      ]);
+
+      await step.execute(mockContext);
+
+      // Should fall back to legacy discovery
+      expect(mockGetDirectoryEntries).toHaveBeenCalled();
+
+      const writeCall = mockFs.writeFileSync.mock.calls.find(call => 
+        call[0].toString().endsWith('.gdextension')
+      );
+      const content = writeCall?.[1] as string;
+
+      expect(content).toContain('windows.debug.x86_64 = "bin/libtest_gdext.windows.template_debug.x86_64.dll"');
+    });
+
+    it('should handle empty organized binaries array', async () => {
+      (mockContext as any).organizedBinaries = [];
+
+      // Should fall back to legacy discovery
+      mockGetDirectoryEntries.mockReturnValue([
+        'libtest_gdext.windows.template_debug.x86_64.dll'
+      ]);
+
+      await step.execute(mockContext);
+
+      expect(mockGetDirectoryEntries).toHaveBeenCalled();
     });
   });
 

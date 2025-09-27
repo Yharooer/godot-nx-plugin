@@ -2,8 +2,9 @@
  * GDExtension Bundle Build Step
  * 
  * This step creates the final GDExtension bundle by generating the .gdextension
- * configuration file and organizing the compiled binaries in the build directory.
- * This step is shared between C++ and Rust GDExtension projects.
+ * configuration file. It works with binaries that have already been organized
+ * by the OrganizeCompiledBinariesStep. This step is shared between C++ and Rust
+ * GDExtension projects.
  */
 
 import * as fs from 'fs';
@@ -11,6 +12,7 @@ import * as path from 'path';
 import { BuildStep, BuildContext } from '../core/interfaces';
 import { FileSystemError } from '../core/errors';
 import { ensureDirectoryExists, getDirectoryEntries } from '../utils/file-operations';
+import { OrganizedBinary } from './organize-compiled-binaries-step';
 
 /**
  * Options for the GDExtension bundle step
@@ -24,12 +26,22 @@ export interface GDExtensionBundleStepOptions {
   readonly reloadable?: boolean;
   /** Project type (rust or cpp) for specific handling */
   readonly projectType?: 'rust' | 'cpp';
-  /** Additional dependencies to include in .gdextension file */
-  readonly dependencies?: readonly string[];
+  /** Dynamic dependencies to include in .gdextension file */
+  readonly dynamicDependencies?: readonly DynamicDependency[];
 }
 
 /**
- * Information about a compiled binary
+ * Dynamic dependency specification for .gdextension file
+ */
+export interface DynamicDependency {
+  /** Platform specification (e.g., "windows.x86_64", "macos.universal") */
+  readonly platform: string;
+  /** Path to the dependency library relative to the .gdextension file */
+  readonly path: string;
+}
+
+/**
+ * Information about a compiled binary (legacy interface for backward compatibility)
  */
 interface CompiledBinary {
   /** Original filename */
@@ -60,23 +72,35 @@ export class GDExtensionBundleStep implements BuildStep {
       // Ensure build directory exists
       await ensureDirectoryExists(buildDir, context.projectName);
 
-      // Check if bin directory exists and has binaries
-      if (!fs.existsSync(binDir)) {
-        throw new Error(`No compiled binaries found in ${binDir}. Compilation step may have failed.`);
-      }
-
-      // Discover compiled binaries
-      const binaries = await this.discoverCompiledBinaries(binDir, context.projectName);
+      // Get organized binaries from context (set by OrganizeCompiledBinariesStep)
+      const organizedBinaries = (context as any).organizedBinaries as OrganizedBinary[] | undefined;
       
-      if (binaries.length === 0) {
-        throw new Error(`No compiled binaries found in ${binDir}`);
+      let binaries: CompiledBinary[];
+      
+      if (organizedBinaries && organizedBinaries.length > 0) {
+        // Use organized binaries from previous step
+        binaries = this.convertOrganizedBinaries(organizedBinaries);
+        console.log(`Using ${binaries.length} organized binaries from previous step`);
+      } else {
+        // Fallback to legacy discovery method for backward compatibility
+        console.log('No organized binaries found, falling back to legacy discovery method');
+        
+        if (!fs.existsSync(binDir)) {
+          throw new Error(`No compiled binaries found in ${binDir}. Compilation step may have failed.`);
+        }
+
+        binaries = await this.discoverCompiledBinaries(binDir, context.projectName);
+        
+        if (binaries.length === 0) {
+          throw new Error(`No compiled binaries found in ${binDir}`);
+        }
       }
 
       // Generate .gdextension file
       await this.generateGDExtensionFile(context, binaries, buildDir);
 
       console.log(`GDExtension bundle created successfully in ${buildDir}`);
-      console.log(`Found ${binaries.length} compiled binaries`);
+      console.log(`Generated .gdextension file with ${binaries.length} library entries`);
 
     } catch (error) {
       throw new FileSystemError(
@@ -88,7 +112,29 @@ export class GDExtensionBundleStep implements BuildStep {
   }
 
   /**
-   * Discover compiled binaries in the bin directory
+   * Convert organized binaries to the legacy CompiledBinary format
+   */
+  private convertOrganizedBinaries(organizedBinaries: OrganizedBinary[]): CompiledBinary[] {
+    return organizedBinaries.map(binary => {
+      const { fileName, platformTarget } = binary;
+      const { platform, architecture, target } = platformTarget;
+      
+      // Extract extension from filename
+      const lastDotIndex = fileName.lastIndexOf('.');
+      const extension = lastDotIndex !== -1 ? fileName.substring(lastDotIndex + 1) : '';
+      
+      return {
+        fileName,
+        platform,
+        architecture,
+        target,
+        extension
+      };
+    });
+  }
+
+  /**
+   * Discover compiled binaries in the bin directory (legacy method for backward compatibility)
    */
   private async discoverCompiledBinaries(binDir: string, projectName: string): Promise<CompiledBinary[]> {
     const entries = getDirectoryEntries(binDir);
@@ -193,10 +239,19 @@ export class GDExtensionBundleStep implements BuildStep {
     }
 
     // Add dependencies section if specified
-    if (this.options.dependencies && this.options.dependencies.length > 0) {
+    if (this.options.dynamicDependencies && this.options.dynamicDependencies.length > 0) {
       content += '\n[dependencies]\n';
-      for (const dependency of this.options.dependencies) {
-        content += `${dependency}\n`;
+      
+      // Group dependencies by platform
+      const dependenciesByPlatform = this.groupDependenciesByPlatform(this.options.dynamicDependencies);
+      
+      for (const [platformKey, dependencies] of dependenciesByPlatform) {
+        if (dependencies.length === 1) {
+          content += `${platformKey} = "${dependencies[0]}"\n`;
+        } else {
+          // Multiple dependencies for the same platform
+          content += `${platformKey} = [${dependencies.map(dep => `"${dep}"`).join(', ')}]\n`;
+        }
       }
     }
 
@@ -235,5 +290,39 @@ export class GDExtensionBundleStep implements BuildStep {
     } else {
       return `${platform}.${target}.${architecture}`;
     }
+  }
+
+  /**
+   * Group dynamic dependencies by platform key
+   */
+  private groupDependenciesByPlatform(dependencies: readonly DynamicDependency[]): Map<string, string[]> {
+    const grouped = new Map<string, string[]>();
+    
+    for (const dependency of dependencies) {
+      const { platform, path: depPath } = dependency;
+      
+      // Parse platform specification (e.g., "windows.x86_64" or "macos.universal")
+      const [platformName, architecture] = platform.split('.');
+      
+      if (!platformName || !architecture) {
+        console.warn(`Invalid platform specification for dependency: ${platform}`);
+        continue;
+      }
+      
+      // Generate platform key for dependencies section
+      // Dependencies use a simpler format: platform.architecture
+      const platformKey = architecture === 'universal' ? platformName : `${platformName}.${architecture}`;
+      
+      if (!grouped.has(platformKey)) {
+        grouped.set(platformKey, []);
+      }
+      
+      const existingDeps = grouped.get(platformKey);
+      if (existingDeps && !existingDeps.includes(depPath)) {
+        existingDeps.push(depPath);
+      }
+    }
+    
+    return grouped;
   }
 }

@@ -237,10 +237,6 @@ describe('RustCompilationStep', () => {
         'test-rust-project'
       );
       expect(mockEnsureDirectoryExists).toHaveBeenCalledWith(
-        '/workspace/test-rust-project/build',
-        'test-rust-project'
-      );
-      expect(mockEnsureDirectoryExists).toHaveBeenCalledWith(
         '/workspace/test-rust-project/build/bin',
         'test-rust-project'
       );
@@ -265,10 +261,8 @@ describe('RustCompilationStep', () => {
 
       await step.execute(mockContext);
 
-      expect(mockFs.copyFileSync).toHaveBeenCalledWith(
-        expect.stringContaining('x86_64-pc-windows-msvc/debug/test_rust_project.dll'),
-        '/workspace/test-rust-project/build/bin/libtest_rust_project.windows.template_debug.x86_64.dll'
-      );
+      // The compilation step no longer organizes binaries - that's done by OrganizeCompiledBinariesStep
+      expect(mockFs.copyFileSync).not.toHaveBeenCalled();
     });
 
     it('should handle universal binary compilation for macOS', async () => {

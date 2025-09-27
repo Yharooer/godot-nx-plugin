@@ -97,14 +97,8 @@ export class RustCompilationStep implements BuildStep {
         await this.compileForTarget(context, platformTarget, tmpDir);
       }
 
-      // Create build directory structure
-      const buildDir = context.buildDir;
-      const binDir = path.join(buildDir, 'bin');
-      await ensureDirectoryExists(buildDir, context.projectName);
-      await ensureDirectoryExists(binDir, context.projectName);
-
-      // Organize compiled binaries
-      await this.organizeCompiledBinaries(context, platformTargets, tmpDir, binDir);
+      // Store platform targets for use by OrganizeCompiledBinariesStep
+      (context as any).rustPlatformTargets = platformTargets;
 
     } catch (error) {
       throw new CompilationError(
@@ -404,84 +398,5 @@ codegen-units = 1
     }
   }
 
-  /**
-   * Organize compiled binaries into the build directory with Godot naming convention
-   */
-  private async organizeCompiledBinaries(
-    context: BuildContext,
-    platformTargets: RustPlatformTarget[],
-    tmpDir: string,
-    binDir: string
-  ): Promise<void> {
-    for (const platformTarget of platformTargets) {
-      const { platform, architecture, target } = platformTarget;
-      const platformSpec = `${platform}.${architecture}`;
-      
-      // Find the compiled binary
-      const targetDir = path.join(tmpDir, `build-${platformSpec}-${target}`);
-      const rustTarget = RUST_TARGET_MAPPING[platformSpec];
-      
-      if (!rustTarget) continue;
 
-      const profileDir = target === 'release' ? 'release' : 'debug';
-      const originalBinaryName = this.getCompiledBinaryName(context.projectName, platform);
-      
-      let binaryPath: string;
-      
-      if (architecture === 'universal') {
-        // Universal binary was created in a special directory
-        binaryPath = path.join(tmpDir, `build-${platformSpec}-${target}`, originalBinaryName);
-      } else {
-        binaryPath = path.join(targetDir, rustTarget, profileDir, originalBinaryName);
-      }
-
-      if (!fs.existsSync(binaryPath)) {
-        console.warn(`Compiled binary not found: ${binaryPath}`);
-        continue;
-      }
-
-      // Generate Godot-compatible filename
-      const godotBinaryName = this.generateGodotBinaryName(context.projectName, platform, architecture, target);
-      const destPath = path.join(binDir, godotBinaryName);
-
-      // Copy binary to build directory
-      fs.copyFileSync(binaryPath, destPath);
-      console.log(`Organized binary: ${godotBinaryName}`);
-    }
-  }
-
-  /**
-   * Generate Godot-compatible binary name
-   * Format: lib{project}.{platform}.template_{target}.{arch}.{ext}
-   */
-  private generateGodotBinaryName(
-    projectName: string,
-    platform: string,
-    architecture: string,
-    target: string
-  ): string {
-    const crateName = projectName.replace(/-/g, '_');
-    const templateTarget = target === 'release' ? 'template_release' : 'template_debug';
-    
-    let extension: string;
-    switch (platform) {
-      case 'windows':
-        extension = 'dll';
-        break;
-      case 'macos':
-        extension = architecture === 'universal' ? 'framework' : 'dylib';
-        break;
-      case 'ios':
-        extension = 'framework';
-        break;
-      default:
-        extension = 'so';
-    }
-
-    if (architecture === 'universal') {
-      return `lib${crateName}.${platform}.${templateTarget}.${extension}`;
-    } else {
-      return `lib${crateName}.${platform}.${templateTarget}.${architecture}.${extension}`;
-    }
-  }
 }

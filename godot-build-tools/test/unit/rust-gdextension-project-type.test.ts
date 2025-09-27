@@ -30,12 +30,13 @@ describe('RustGDExtensionProjectType', () => {
   });
 
   describe('createBuildPipeline', () => {
-    it('should create build pipeline with RustCompilationStep and GDExtensionBundleStep', () => {
+    it('should create build pipeline with RustCompilationStep, OrganizeCompiledBinariesStep, and GDExtensionBundleStep', () => {
       const pipeline = projectType.createBuildPipeline(mockContext);
 
-      expect(pipeline).toHaveLength(2);
+      expect(pipeline).toHaveLength(3);
       expect(pipeline[0]).toBeInstanceOf(RustCompilationStep);
-      expect(pipeline[1]).toBeInstanceOf(GDExtensionBundleStep);
+      expect(pipeline[1].name).toBe('Organize Compiled Binaries');
+      expect(pipeline[2]).toBeInstanceOf(GDExtensionBundleStep);
     });
 
     it('should pass compilation options to RustCompilationStep', () => {
@@ -64,7 +65,7 @@ describe('RustGDExtensionProjectType', () => {
       });
 
       const pipeline = projectType.createBuildPipeline(mockContext);
-      const bundleStep = pipeline[1] as GDExtensionBundleStep;
+      const bundleStep = pipeline[2] as GDExtensionBundleStep;
 
       expect(bundleStep).toBeInstanceOf(GDExtensionBundleStep);
       expect(bundleStep.name).toBe('GDExtension Bundle');
@@ -74,7 +75,7 @@ describe('RustGDExtensionProjectType', () => {
       mockContext.projectName = 'my-rust-extension';
       
       const pipeline = projectType.createBuildPipeline(mockContext);
-      const bundleStep = pipeline[1] as GDExtensionBundleStep;
+      const bundleStep = pipeline[2] as GDExtensionBundleStep;
 
       // The default entry symbol should be generated as my_rust_extension_init
       expect(bundleStep).toBeInstanceOf(GDExtensionBundleStep);
@@ -86,9 +87,10 @@ describe('RustGDExtensionProjectType', () => {
       const pipeline = projectType.createBuildPipeline(mockContext);
       
       // Should create the pipeline successfully with converted entry symbol
-      expect(pipeline).toHaveLength(2);
+      expect(pipeline).toHaveLength(3);
       expect(pipeline[0]).toBeInstanceOf(RustCompilationStep);
-      expect(pipeline[1]).toBeInstanceOf(GDExtensionBundleStep);
+      expect(pipeline[1].name).toBe('Organize Compiled Binaries');
+      expect(pipeline[2]).toBeInstanceOf(GDExtensionBundleStep);
     });
 
     it('should work with empty options', () => {
@@ -96,9 +98,10 @@ describe('RustGDExtensionProjectType', () => {
       
       const pipeline = projectType.createBuildPipeline(mockContext);
 
-      expect(pipeline).toHaveLength(2);
+      expect(pipeline).toHaveLength(3);
       expect(pipeline[0]).toBeInstanceOf(RustCompilationStep);
-      expect(pipeline[1]).toBeInstanceOf(GDExtensionBundleStep);
+      expect(pipeline[1].name).toBe('Organize Compiled Binaries');
+      expect(pipeline[2]).toBeInstanceOf(GDExtensionBundleStep);
     });
 
     it('should work with no options', () => {
@@ -106,9 +109,10 @@ describe('RustGDExtensionProjectType', () => {
       
       const pipeline = projectType.createBuildPipeline(mockContext);
 
-      expect(pipeline).toHaveLength(2);
+      expect(pipeline).toHaveLength(3);
       expect(pipeline[0]).toBeInstanceOf(RustCompilationStep);
-      expect(pipeline[1]).toBeInstanceOf(GDExtensionBundleStep);
+      expect(pipeline[1].name).toBe('Organize Compiled Binaries');
+      expect(pipeline[2]).toBeInstanceOf(GDExtensionBundleStep);
     });
   });
 });

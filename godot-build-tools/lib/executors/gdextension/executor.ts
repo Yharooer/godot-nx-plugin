@@ -13,6 +13,7 @@ import { BaseExecutor, BaseExecutorOptions, ExecutorResult, runExecutor } from '
 import { BuildContext } from '../../core/interfaces';
 import { ConfigurationError } from '../../core/errors';
 import { RustGDExtensionProjectType } from '../../project-types/rust-gdextension-project-type';
+import { DynamicDependency } from '../../build-steps/gdextension-bundle-step';
 
 /**
  * Options for the gdextension executor
@@ -32,6 +33,18 @@ export interface GDExtensionExecutorOptions extends BaseExecutorOptions {
   readonly entrySymbol?: string;
   /** Dynamic linking options where possible */
   readonly linkType?: 'static' | 'dynamic';
+  /** Dynamic dependencies to include in .gdextension file */
+  readonly dynamicDependencies?: readonly DynamicDependency[];
+  /** Custom addon name (defaults to project name) */
+  readonly addonName?: string;
+  /** Whether to create plugin.cfg file */
+  readonly createPluginConfig?: boolean;
+  /** Plugin description for plugin.cfg */
+  readonly pluginDescription?: string;
+  /** Plugin author for plugin.cfg */
+  readonly pluginAuthor?: string;
+  /** Plugin version for plugin.cfg */
+  readonly pluginVersion?: string;
 }
 
 /**
@@ -88,7 +101,13 @@ export class GDExtensionExecutor extends BaseExecutor<GDExtensionExecutorOptions
         ...(this.options.compatibilityMinimum && { compatibilityMinimum: this.options.compatibilityMinimum }),
         ...(this.options.reloadable !== undefined && { reloadable: this.options.reloadable }),
         ...(this.options.entrySymbol && { entrySymbol: this.options.entrySymbol }),
-        ...(this.options.linkType && { linkType: this.options.linkType })
+        ...(this.options.linkType && { linkType: this.options.linkType }),
+        ...(this.options.dynamicDependencies && { dynamicDependencies: this.options.dynamicDependencies }),
+        ...(this.options.addonName && { addonName: this.options.addonName }),
+        ...(this.options.createPluginConfig !== undefined && { createPluginConfig: this.options.createPluginConfig }),
+        ...(this.options.pluginDescription && { pluginDescription: this.options.pluginDescription }),
+        ...(this.options.pluginAuthor && { pluginAuthor: this.options.pluginAuthor }),
+        ...(this.options.pluginVersion && { pluginVersion: this.options.pluginVersion })
       });
     }
 

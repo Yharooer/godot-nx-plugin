@@ -58,6 +58,48 @@
       "description": "Dynamic linking options where possible",
       "enum": ["static", "dynamic"],
       "default": "dynamic"
+    },
+    "dynamicDependencies": {
+      "type": "array",
+      "description": "Dynamic dependencies to include in .gdextension file",
+      "items": {
+        "type": "object",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "description": "Platform specification (e.g., 'windows.x86_64', 'macos.universal')",
+            "pattern": "^(windows|macos|linux|android|ios|web)\\.(x86_64|arm64|universal|wasm32|rv64)$"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path to the dependency library relative to the .gdextension file"
+          }
+        },
+        "required": ["platform", "path"],
+        "additionalProperties": false
+      }
+    },
+    "addonName": {
+      "type": "string",
+      "description": "Custom addon name (defaults to project name)"
+    },
+    "createPluginConfig": {
+      "type": "boolean",
+      "description": "Whether to create plugin.cfg file",
+      "default": true
+    },
+    "pluginDescription": {
+      "type": "string",
+      "description": "Plugin description for plugin.cfg"
+    },
+    "pluginAuthor": {
+      "type": "string",
+      "description": "Plugin author for plugin.cfg"
+    },
+    "pluginVersion": {
+      "type": "string",
+      "description": "Plugin version for plugin.cfg",
+      "default": "1.0.0"
     }
   },
   "additionalProperties": false
