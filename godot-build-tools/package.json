@@ -14,7 +14,8 @@
     "clean": "rm -rf build",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "postinstall": "npm run build"
   },
   "dependencies": {
     "@nx/devkit": "^21.3.7"

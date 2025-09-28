@@ -6,7 +6,9 @@
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
-      "outputs": ["{projectRoot}/build"],
+      "outputs": [
+        "{projectRoot}/build"
+      ],
       "options": {
         "outputPath": "godot-build-tools/build",
         "main": "godot-build-tools/lib/index.ts",
@@ -25,5 +27,7 @@
       }
     }
   },
-  "tags": ["build-tools"]
+  "tags": [
+    "build-tools"
+  ]
 }
